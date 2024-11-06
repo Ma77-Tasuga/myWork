@@ -1,6 +1,3 @@
-"""
-    step2
-"""
 import time
 import pandas as pd
 import numpy as np
@@ -9,7 +6,9 @@ import os.path as osp
 import csv
 import re
 
-
+"""
+    step2
+"""
 input_dir = './raw_data'
 output_dir = './parsed_data'
 

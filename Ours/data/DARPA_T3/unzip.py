@@ -1,10 +1,9 @@
+import os
 """
     step 1
     解压文件
 """
 
-
-import os
 
 # TODO: 注意修改文件路径
 # os.system('tar -zxvf ./zipdata/ta1-cadets-e3-official.json.tar.gz -C ./unziped_data')
