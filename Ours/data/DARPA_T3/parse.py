@@ -1,9 +1,6 @@
-import time
-import pandas as pd
-import numpy as np
-import os
-import os.path as osp
 import csv
+import time
+import os.path as osp
 import re
 
 """
@@ -11,6 +8,7 @@ import re
 """
 input_dir = './raw_data'
 output_dir = './parsed_data'
+
 
 def show(str):
     print(str + ' ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
@@ -30,6 +28,9 @@ pattern_type = re.compile(r'type\":\"(.*?)\"')
 pattern_time = re.compile(r'timestampNanos\":(.*?),')
 
 notice_num = 1000000
+
+# node_type_set = set()
+# edge_type_set = set()
 
 for path in path_list:
     id_nodetype_map = {}
@@ -63,6 +64,10 @@ for path in path_list:
                     continue
 
             id_nodetype_map[uuid] = subject_type[0]
+
+    # for type in id_nodetype_map.values():
+    #     node_type_set.add(type)
+
     not_in_cnt = 0
     for i in range(100):
         now_path = path + '.' + str(i)
@@ -81,6 +86,9 @@ for path in path_list:
                 edgeType = pattern_type.findall(line)[0]
                 timestamp = pattern_time.findall(line)[0]
                 srcId = pattern_src.findall(line)
+
+                # edge_type_set.add(edgeType)
+
                 if len(srcId) == 0: continue
                 srcId = srcId[0]
                 if not srcId in id_nodetype_map.keys():
@@ -110,3 +118,21 @@ for path in path_list:
                     fw.write(this_edge2)
         fw.close()
         f.close()
+
+    # with open(osp.join('./using_data/', path.split('.')[0], 'nodeType2id.csv'), 'w', encoding='utf-8') as fw_node, open(
+    #         osp.join('./using_data/', path.split('.')[0], 'edgeType2id.csv'), 'w', encoding='utf-8') as fw_edge:
+    #     write_list = []
+    #     for item in node_type_set:
+    #         cnt = 1
+    #         write_list.append([str(item), str(cnt)])
+    #         cnt += 1
+    #     writer = csv.writer(fw_node)
+    #     writer.writerows(write_list)
+    #
+    #     write_list = []
+    #     for item in edge_type_set:
+    #         cnt = 1
+    #         write_list.append([str(item), str(cnt)])
+    #         cnt += 1
+    #     writer = csv.writer(fw_edge)
+    #     writer.writerows(write_list)
