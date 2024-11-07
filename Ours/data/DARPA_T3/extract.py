@@ -1,8 +1,7 @@
 from os import path as osp
-
-from ...scripts.utils import *
-
-
+import torch
+from Ours.scripts.config import *
+from torch_geometric.data import TemporalData
 """
     step3
     提取需要的数据
@@ -16,6 +15,22 @@ selected_file_test = ['ta1-trace-e3-official-1.json.4.txt']
 
 
 for file in selected_file_train:
+    data_name = file.split('-')[1]
+
+    event2index = {}
+    nodeType2index = {}
+    """加载边类型和节点类型的索引映射"""
+    with open(osp.join('./label', data_name,'feature.txt'), 'r') as feature, open(osp.join('./label', data_name,'label.txt'),'r') as label:
+        lines = feature.readlines()
+        for line in lines:
+            entry = line.strip().split('\t')
+
+            event2index[entry[0]] = int(entry[1])
+
+        lines = label.readlines()
+        for line in lines:
+            entry = line.strip().split('\t')
+            nodeType2index[entry[0]] = int(entry[1])
 
     node_uuid2index = {} # 存放uuid与index下标的映射，存在反向映射，key为str类型
 
@@ -47,16 +62,17 @@ for file in selected_file_train:
                 node_uuid2index[srcId] = now_index
                 node_uuid2index[str(now_index)] = srcId
                 now_index +=1
-
-                nodeType_list.append(src_type)
+                nodeType_list.append(nodeType2index[src_type])
+                # nodeType_list.append(src_type)
 
             if dstId not in node_uuid2index:
                 node_uuid2index[dstId] = now_index
                 node_uuid2index[str(now_index)] = dstId
                 now_index += 1
+                nodeType_list.append(nodeType2index[dst_type])
+                # nodeType_list.append(dst_type)
 
-                nodeType_list.append(dst_type)
-
+        dataset = TemporalData()
         src_list = []
         dst_list = []
         edgeType_list = []
@@ -68,14 +84,38 @@ for file in selected_file_train:
             # 临接表
             src_list.append(node_uuid2index[entry[0]])
             dst_list.append(node_uuid2index[entry[2]])
-            edgeType_list.append(entry[4])  # 边类型
+            # edgeType_list.append(entry[4])  # 边类型
+            edgeType_list.append(event2index[entry[4]]) # 边类型索引列表
             time_list.append(entry[5]) # 原始时间戳
+
+        dataset.src = torch.tensor(src_list)
+        dataset.dst = torch.tensor(dst_list)
+        dataset.src = dataset.src.to(torch.long)
+        dataset.dst = dataset.dst.to(torch.long)
 
     # with open(osp.join(write_dir,file.split('.')[0]+''))
 
 
 """测试集"""
 for file in selected_file_test:
+
+    data_name = file.split('-')[1]
+
+    event2index = {}
+    nodeType2index = {}
+    """加载边类型和节点类型的索引映射"""
+    with open(osp.join('./label', data_name, 'feature.txt'), 'r') as feature, open(
+            osp.join('./label', data_name, 'label.txt'), 'r') as label:
+        lines = feature.readlines()
+        for line in lines:
+            entry = line.strip().split('\t')
+
+            event2index[entry[0]] = int(entry[1])
+
+        lines = label.readlines()
+        for line in lines:
+            entry = line.strip().split('\t')
+            nodeType2index[entry[0]] = int(entry[1])
 
     node_uuid2index = {}  # 存放uuid与index下标的映射，存在反向映射，key为str类型
 
@@ -105,16 +145,17 @@ for file in selected_file_test:
                 node_uuid2index[srcId] = now_index
                 node_uuid2index[str(now_index)] = srcId
                 now_index += 1
-
-                nodeType_list.append(src_type)
+                nodeType_list.append(nodeType2index[src_type])
+                # nodeType_list.append(src_type)
 
             if dstId not in node_uuid2index:
                 node_uuid2index[dstId] = now_index
                 node_uuid2index[str(now_index)] = dstId
                 now_index += 1
+                nodeType_list.append(nodeType2index[dst_type])
+                # nodeType_list.append(dst_type)
 
-                nodeType_list.append(dst_type)
-
+        dataset = TemporalData()
         src_list = []
         dst_list = []
         edgeType_list = []
@@ -126,7 +167,12 @@ for file in selected_file_test:
             # 临接表
             src_list.append(node_uuid2index[entry[0]])
             dst_list.append(node_uuid2index[entry[2]])
-            edgeType_list.append(entry[4])  # 边类型
+            # edgeType_list.append(entry[4])  # 边类型
+            edgeType_list.append(event2index[entry[4]])
             time_list.append(entry[5])  # 原始时间戳
 
 
+        dataset.src = torch.tensor(src_list)
+        dataset.dst = torch.tensor(dst_list)
+        dataset.src = dataset.src.to(torch.long)
+        dataset.dst = dataset.dst.to(torch.long)

@@ -44,11 +44,12 @@ def datetime_to_timestamp_US(date):
 
 def timestamp_to_datetime_US(ns):
     """
-    :param date: str   format: %Y-%m-%d %H:%M:%S   e.g. 2013-10-10 23:40:00
-    :return: nano timestamp
+    :param date: nano_timestamps:str   format: 1533289579012(000000)
+    :return: nano timestamp e.g. 2018-04-09 11:59:39.12
     """
     tz = pytz.timezone('US/Eastern')
-    ms = ns % 1000
+    # ms = ns % 1000
+    ms = str(ns)[-3:]
     ns /= 1000
     dt = pytz.datetime.datetime.fromtimestamp(int(ns), tz)
     s = dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -60,4 +61,4 @@ def timestamp_to_datetime_US(ns):
 if __name__ == '__main__':
     # print(datetime_to_ns_time())
     # print(datetime_to_timestamp_US())
-    print(timestamp_to_datetime_US(1523289579012))
+    print(timestamp_to_datetime_US(1533289580012))
