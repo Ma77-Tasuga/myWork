@@ -6,6 +6,7 @@ import pytz  # 时区计算
 
 """
     处理时间戳
+    转换的最小单位是毫秒
 """
 
 
@@ -25,7 +26,7 @@ def datetime_to_ns_time(date):
 
 def datetime_to_timestamp_US(date):
     """
-    :param date: str   format: %Y-%m-%d %H:%M:%S   e.g. 2013-10-10 23:40:00
+    :param date: str   e.g. 2013-10-10T23:40:00.974-04:00
     :return: nano timestamp
     """
     date = date.replace('-04:00', '')
@@ -60,5 +61,5 @@ def timestamp_to_datetime_US(ns):
 
 if __name__ == '__main__':
     # print(datetime_to_ns_time())
-    # print(datetime_to_timestamp_US())
-    print(timestamp_to_datetime_US(1533289580012))
+    # print(datetime_to_timestamp_US("2019-09-23T09:42:55.974-04:00"))
+    print(timestamp_to_datetime_US(1523289468989))

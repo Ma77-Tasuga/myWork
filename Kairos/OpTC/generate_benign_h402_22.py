@@ -69,7 +69,7 @@ for day in tqdm(range(22 ,23)):
                                   edge2vec[e[2]],
                                   str2tensor(e[4],node_uuid2path[e[3]])
                                   ]))
-            t.append(int(e[6]))
+            t.append(int(e[6]) # 字符串强制转换int
 
     dataset.src = torch.tensor(src)
     dataset.dst = torch.tensor(dst)

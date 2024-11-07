@@ -86,7 +86,7 @@ for file in selected_file_train:
             dst_list.append(node_uuid2index[entry[2]])
             # edgeType_list.append(entry[4])  # 边类型
             edgeType_list.append(event2index[entry[4]]) # 边类型索引列表
-            time_list.append(entry[5]) # 原始时间戳
+            time_list.append(int(entry[5][:-6])) # 原始时间戳, 消去最后的纳秒位
 
         dataset.src = torch.tensor(src_list)
         dataset.dst = torch.tensor(dst_list)
@@ -98,8 +98,9 @@ for file in selected_file_train:
         # TODO：看看y是不是这个意思
         dataset.y = torch.tensor(nodeType_list)
         dataset.y = dataset.y.to(torch.long)
-        # TODO: 加上时间戳
 
+        dataset.t = torch.tensor(time_list)
+        dataset.t = dataset.t.to(torch.long)
 
 """测试集"""
 for file in selected_file_test:
@@ -174,7 +175,7 @@ for file in selected_file_test:
             dst_list.append(node_uuid2index[entry[2]])
             # edgeType_list.append(entry[4])  # 边类型
             edgeType_list.append(event2index[entry[4]])
-            time_list.append(entry[5])  # 原始时间戳
+            time_list.append(int(entry[5][:-6]))  # 原始时间戳
 
         dataset.src = torch.tensor(src_list)
         dataset.dst = torch.tensor(dst_list)
@@ -186,4 +187,6 @@ for file in selected_file_test:
         # TODO：看看y是不是这个意思
         dataset.y = torch.tensor(nodeType_list)
         dataset.y = dataset.y.to(torch.long)
-        # TODO: 加上时间戳
+
+        dataset.t = torch.tensor(time_list)
+        dataset.t = dataset.t.to(torch.long)
