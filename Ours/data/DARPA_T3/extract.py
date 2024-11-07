@@ -106,6 +106,7 @@ for file in selected_file_train:
         dataset.t = dataset.t.to(torch.long)
         print(f'saving train dataset {data_name}.')
         torch.save(dataset, f"./using_data/train/{data_name}.TemporalData")
+        torch.save(node_uuid2index, f'./using_data/train/{data_name}_uuid2index')
         print('finish.\n')
 """测试集"""
 for file in selected_file_test:
@@ -199,4 +200,5 @@ for file in selected_file_test:
         dataset.t = dataset.t.to(torch.long)
         print(f'saving test dataset {data_name}')
         torch.save(dataset, f"./using_data/test/{data_name}.TemporalData")
+        torch.save(node_uuid2index, f'./using_data/test/{data_name}_uuid2index')
         print('finish.\n')

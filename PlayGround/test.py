@@ -1,10 +1,11 @@
 import os
 from Ours.scripts.config import *
+
 # print(os.path.abspath('../Ours'))
 
 # print(type(device))
 
-time_stamp =['1523289468989000000','1523289468989000000','1523289468989000000','1523289468989000000','1523289468989000000','1523289468989000000','1523289468989000000']
+file = '../Ours/data/DARPA_T3/label/trace/feature.txt'
 
-time_ms = time_stamp[6][:-6]
-print(time_ms)
+with open(file, 'a', encoding='utf-8') as f:
+    f.write('\nEVENT_UPDATE' + '\t' + '23')
