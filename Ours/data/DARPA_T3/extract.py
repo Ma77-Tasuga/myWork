@@ -92,8 +92,13 @@ for file in selected_file_train:
         dataset.dst = torch.tensor(dst_list)
         dataset.src = dataset.src.to(torch.long)
         dataset.dst = dataset.dst.to(torch.long)
-
-    # with open(osp.join(write_dir,file.split('.')[0]+''))
+        # TODO: 看看这个表示什么
+        dataset.msg = torch.tensor(edgeType_list)
+        dataset.msg = dataset.msg.to(torch.long)
+        # TODO：看看y是不是这个意思
+        dataset.y = torch.tensor(nodeType_list)
+        dataset.y = dataset.y.to(torch.long)
+        # TODO: 加上时间戳
 
 
 """测试集"""
@@ -171,8 +176,14 @@ for file in selected_file_test:
             edgeType_list.append(event2index[entry[4]])
             time_list.append(entry[5])  # 原始时间戳
 
-
         dataset.src = torch.tensor(src_list)
         dataset.dst = torch.tensor(dst_list)
         dataset.src = dataset.src.to(torch.long)
         dataset.dst = dataset.dst.to(torch.long)
+        # TODO: 看看这个表示什么
+        dataset.msg = torch.tensor(edgeType_list)
+        dataset.msg = dataset.msg.to(torch.long)
+        # TODO：看看y是不是这个意思
+        dataset.y = torch.tensor(nodeType_list)
+        dataset.y = dataset.y.to(torch.long)
+        # TODO: 加上时间戳
