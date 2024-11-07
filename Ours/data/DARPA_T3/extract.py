@@ -13,9 +13,11 @@ write_dir = './using_data'
 selected_file_train = ['ta1-trace-e3-official-1.json.txt']
 selected_file_test = ['ta1-trace-e3-official-1.json.4.txt']
 
+# TODO：边和节点类型的one-hot编码计划放进模型输入编码层实现
 
 for file in selected_file_train:
     data_name = file.split('-')[1]
+    print(f'preparing train dataset {data_name}.')
 
     event2index = {}
     nodeType2index = {}
@@ -88,24 +90,28 @@ for file in selected_file_train:
             edgeType_list.append(event2index[entry[4]]) # 边类型索引列表
             time_list.append(int(entry[5][:-6])) # 原始时间戳, 消去最后的纳秒位
 
+        """把数据转化成张量"""
         dataset.src = torch.tensor(src_list)
         dataset.dst = torch.tensor(dst_list)
         dataset.src = dataset.src.to(torch.long)
         dataset.dst = dataset.dst.to(torch.long)
-        # TODO: 看看这个表示什么
+
         dataset.msg = torch.tensor(edgeType_list)
         dataset.msg = dataset.msg.to(torch.long)
-        # TODO：看看y是不是这个意思
+
         dataset.y = torch.tensor(nodeType_list)
         dataset.y = dataset.y.to(torch.long)
 
         dataset.t = torch.tensor(time_list)
         dataset.t = dataset.t.to(torch.long)
-
+        print(f'saving train dataset {data_name}.')
+        torch.save(dataset, f"./using_data/train/{data_name}.TemporalData")
+        print('finish.\n')
 """测试集"""
 for file in selected_file_test:
 
     data_name = file.split('-')[1]
+    print(f'preparing test dataset {data_name}.')
 
     event2index = {}
     nodeType2index = {}
@@ -177,16 +183,20 @@ for file in selected_file_test:
             edgeType_list.append(event2index[entry[4]])
             time_list.append(int(entry[5][:-6]))  # 原始时间戳
 
+        """把数据转化成张量"""
         dataset.src = torch.tensor(src_list)
         dataset.dst = torch.tensor(dst_list)
         dataset.src = dataset.src.to(torch.long)
         dataset.dst = dataset.dst.to(torch.long)
-        # TODO: 看看这个表示什么
+
         dataset.msg = torch.tensor(edgeType_list)
         dataset.msg = dataset.msg.to(torch.long)
-        # TODO：看看y是不是这个意思
+
         dataset.y = torch.tensor(nodeType_list)
         dataset.y = dataset.y.to(torch.long)
 
         dataset.t = torch.tensor(time_list)
         dataset.t = dataset.t.to(torch.long)
+        print(f'saving test dataset {data_name}')
+        torch.save(dataset, f"./using_data/test/{data_name}.TemporalData")
+        print('finish.\n')
