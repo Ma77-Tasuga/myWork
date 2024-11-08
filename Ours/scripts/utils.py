@@ -2,8 +2,9 @@ import time
 from datetime import datetime
 from time import mktime
 import pytz  # 时区计算
-
-
+import numpy as np
+import xxhash
+import torch
 """
     处理时间戳
     转换的最小单位是毫秒
@@ -57,6 +58,52 @@ def timestamp_to_datetime_US(ns):
     s += '.' + str(ms)
     #     s += '.' + str(int(int(ns) % 1000000000)).zfill(9)
     return s
+
+"""
+    计算用函数
+"""
+
+def tensor_find(t,x):
+    t_np=t.numpy()
+    idx=np.argwhere(t_np==x)
+    return idx[0][0]+1
+
+
+def std(t):
+    t = np.array(t)
+    return np.std(t)
+
+
+def var(t):
+    t = np.array(t)
+    return np.var(t)
+
+
+def mean(t):
+    t = np.array(t)
+    return np.mean(t)
+
+def hashgen(l):
+    """Generate a single hash value from a list. @l is a list of
+    string values, which can be properties of a node/edge. This
+    function returns a single hashed integer value."""
+    hasher = xxhash.xxh64()
+    for e in l:
+        hasher.update(e)
+    return hasher.intdigest()
+
+
+# def cal_pos_edges_loss(link_pred_ratio):
+#     loss=[]
+#     for i in link_pred_ratio:
+#         loss.append(criterion(i,torch.ones(1)))
+#     return torch.tensor(loss)
+#
+# def cal_pos_edges_loss_multiclass(link_pred_ratio,labels):
+#     loss=[]
+#     for i in range(len(link_pred_ratio)):
+#         loss.append(criterion(link_pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
+#     return torch.tensor(loss)
 
 
 if __name__ == '__main__':
