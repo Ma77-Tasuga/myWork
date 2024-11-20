@@ -5,6 +5,7 @@ import pytz  # 时区计算
 import numpy as np
 import xxhash
 import torch
+from torch import nn
 """
     处理时间戳
     转换的最小单位是毫秒
@@ -104,6 +105,63 @@ def hashgen(l):
 #     for i in range(len(link_pred_ratio)):
 #         loss.append(criterion(link_pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
 #     return torch.tensor(loss)
+"""
+    metrics计算相关函数
+"""
+def cal_pos_ndoe_loss_multiclass(pred_ratio,labels):
+    loss=[]
+    criterion = nn.CrossEntropyLoss()
+    for i in range(len(pred_ratio)):
+        loss.append(criterion(pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
+    return torch.tensor(loss)
+
+def cal_metrics(gt, node_dic, gate, node_uuid2index):
+    gate = float(gate)
+    anomaly_node = set()
+    benign_node = set()
+    for n in node_dic:
+        if n['loss'] >= gate:
+            anomaly_node.add(n['nodeId'])
+        else:
+            benign_node.add(n['nodeId'])
+
+    benign_node.difference_update(anomaly_node) # 排除A中的重复元素
+
+    FN = 0
+    FP = 0
+    TN = 0
+    TP = 0
+    for n in anomaly_node:
+        n_uuid = node_uuid2index[str(n)]
+        if n_uuid in gt:
+            TP +=1
+        else:
+            FP +=1
+    for n in benign_node:
+        n_uuid = node_uuid2index[str(n)]
+        if n_uuid in gt:
+            FN +=1
+        else:
+            TN +=1
+
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
+    f1_score = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) > 0 else 0.0
+
+    return {
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1_score,
+        "Accuracy": accuracy,
+        "TP":TP,
+        "TN":TN,
+        "FP":FP,
+        "FN":FN
+    }
+
+
+
 
 
 if __name__ == '__main__':

@@ -13,7 +13,6 @@ write_dir = './using_data'
 selected_file_train = ['ta1-trace-e3-official-1.json.txt']
 selected_file_test = ['ta1-trace-e3-official-1.json.4.txt']
 
-# TODO：边和节点类型的one-hot编码计划放进模型输入编码层实现
 
 for file in selected_file_train:
     data_name = file.split('-')[1]
