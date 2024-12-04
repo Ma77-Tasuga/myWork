@@ -6,6 +6,9 @@ import numpy as np
 import xxhash
 import torch
 from torch import nn
+from sklearn.feature_extraction import FeatureHasher
+from Ours.scripts.config import *
+
 """
     处理时间戳
     转换的最小单位是毫秒
@@ -59,6 +62,80 @@ def timestamp_to_datetime_US(ns):
     s += '.' + str(ms)
     #     s += '.' + str(int(int(ns) % 1000000000)).zfill(9)
     return s
+
+
+"""
+    计算初始嵌入
+"""
+encode_len = 16
+FH_string = FeatureHasher(n_features=encode_len, input_type="string")
+# FH输出的特征向量的维度为16
+
+
+# 根据path结构分级提取对应的路径，为了下游的hash构建索引
+def path2higlist(p) -> list:
+    l = []
+    spl = p.strip().split('/') # 这里是按照"/"分割的，注意元数据中的路径分割符号
+    for i in spl:
+        if len(l) != 0:
+            l.append(l[-1] + '/' + i)
+        else:
+            l.append(i)
+            # path
+            # path/to
+            # path/to/image
+    #     print(l)
+    return l
+
+
+# 分层ip
+def ip2higlist(p) -> list:
+    l = []
+    if "::" not in p:
+        spl = p.strip().split('.')
+        for i in spl:
+            if len(l) != 0:
+                l.append(l[-1] + '.' + i)
+            else:
+                l.append(i)
+                # 192
+                # 192.168
+                # 192.168.0
+                # 192.168.0.1
+        #     print(l)
+        return l
+    else:
+        spl = p.strip().split(':') # 这个应该不是处理端口
+        for i in spl:
+            if len(l) != 0:
+                l.append(l[-1] + ':' + i)
+            else:
+                l.append(i)
+        #     print(l)
+        return l
+
+
+# 把list拼成string，不加任何修饰
+def list2str(l):
+    s = ''
+    for i in l:
+        s += i
+    return s
+
+
+def str2tensor(msg_type, msg):
+    if msg_type == 'FLOW':
+        h_msg = list2str(ip2higlist(msg))
+    else:
+        h_msg = list2str(path2higlist(msg)) # 直接前后拼起来，不知道是为什么
+    vec = FH_string.transform([msg_type + h_msg]).toarray()
+    # 将输入数据转化为哈希表示形式，返回一个稀疏矩阵（通常是 scipy.sparse 类型）
+    vec = torch.tensor(vec).reshape(encode_len).float()
+    #     print(h_msg)
+    return vec
+
+
+edge2vec = torch.nn.functional.one_hot(torch.arange(0, edge_type_num), num_classes=edge_type_num)
 
 """
     计算用函数
@@ -166,5 +243,5 @@ def cal_metrics(gt, node_dic, gate, node_uuid2index):
 
 if __name__ == '__main__':
     # print(datetime_to_ns_time())
-    # print(datetime_to_timestamp_US("2019-09-23T09:42:55.974-04:00"))
-    print(timestamp_to_datetime_US(1523289468989))
+    print(datetime_to_timestamp_US("2019-09-23T09:42:53.999-04:00"))
+    print(timestamp_to_datetime_US(1569246173999))

@@ -52,6 +52,7 @@ class Trainer():
         self.assoc = torch.empty(max_node_num, dtype=torch.long, device=device)
 
     def data2vec(self):
+        # TODO: 这里的one-hot操作可能跟util里的冲突
         edge2vec = torch.nn.functional.one_hot(torch.arange(0, edge_type_num), num_classes=edge_type_num)
         node2vec = torch.nn.functional.one_hot(torch.arange(0, node_type_num), num_classes=node_type_num)
         encoded_msg = []

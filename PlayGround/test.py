@@ -15,3 +15,12 @@ for item in list1:
     item +=2
 
 print(list1)
+set1 = frozenset((1,'abc',3))
+set2 = frozenset(('abc',3,1))
+dec = dict()
+dec[set1] = 2
+
+print(set1==set2)
+print(set1)
+print(set2)
+print(dec[set2])

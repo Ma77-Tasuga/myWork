@@ -65,6 +65,17 @@ for day in tqdm(range(22 ,23)):
             #     msg.append(torch.cat([torch.from_numpy(node2higvec_bn[i[0]]), rel2vec[i[2]], torch.from_numpy(node2higvec_bn[i[1]])] ))
 
             # 这里都是之前声明过的数据结构
+            # node_uuid2path[ans_dic['src_id']] = ans_dic['hostname'] + host_split_symble + raw_dic['properties']['image_path']
+            # data_list.append([
+            #     e['src_id'],
+            #     e['src_type'],
+            #     e['edge_type'],
+            #     e['dst_id'],
+            #     e['dst_type'],
+            #     e['hostname'],
+            #     e['timestamp'],
+            #     "evaluation",
+            # ])
             msg.append(torch.cat([str2tensor(e[1],node_uuid2path[e[0]]),
                                   edge2vec[e[2]],
                                   str2tensor(e[4],node_uuid2path[e[3]])

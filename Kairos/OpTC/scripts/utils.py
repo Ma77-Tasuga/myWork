@@ -123,8 +123,8 @@ def str2tensor(msg_type, msg):
         h_msg = list2str(ip2higlist(msg))
     else:
         h_msg = list2str(path2higlist(msg))
-    vec = FH_string.transform([msg_type + h_msg]).toarray()
-    vec = torch.tensor(vec).reshape(encode_len).float()
+    vec = FH_string.transform([msg_type + h_msg]).toarray() # 二维数组（1，encode_len）
+    vec = torch.tensor(vec).reshape(encode_len).float() # 一维张量
     #     print(h_msg)
     return vec
 
