@@ -10,6 +10,7 @@ import networkx as nx
     step3
     parsed_data -> using_data
     fix map: uuid2index
+    feat: nx graph
 """
 
 data_folder = './parsed_data'
@@ -99,10 +100,16 @@ if __name__ == '__main__':
 
 
             """图构建"""
+            # 一旦发生变动，下面这两个Id都要保持最新
             src_nodeId = node_uuid2index[srcId]
             dst_nodeId = node_uuid2index[dstId]
-            
-
+            # 检查节点是否是被分裂的节点，如果是，将其更新成最新的节点
+            if srcId in coupling_node_dic.keys():
+                actorID_new = actorID+'-'+str(coupling_node_dic[srcId])
+                src_nodeId = node_uuid2index[frozenset((int(ppid), actorID_new))]
+            if dstId in coupling_node_dic.keys():
+                objectID_new = objectID+'-'+str(coupling_node_dic[dstId])
+                dst_nodeId = node_uuid2index[frozenset((int(pid), objectID_new))]
 
             # 插入节点，事先检查节点是否存在
             if src_nodeId not in graph:
