@@ -8,6 +8,7 @@ memory_dim = 100
 
 edge_embedding_dimension=100
 embedding_dim = edge_embedding_dimension
+
 neighbor_size=20
 
 # DARPA T3 trace
@@ -17,11 +18,13 @@ neighbor_size=20
 # DARPA OPTC
 edge_type_num = 8
 node_type_num = 3
-# min_dst_idx, max_dst_idx = 0, max_node_num
-# BATCH=1024
-BATCH = 4096
 
-num_epoch = 15
+# min_dst_idx, max_dst_idx = 0, max_node_num
+
+# BATCH=1024
+BATCH = 8192
+
+num_epoch = 25
 lr = 0.00001
 weight_decay = 0
 # gamma = 1
@@ -29,3 +32,6 @@ weight_decay = 0
 gate = 2.5
 # gate = 2
 # gate = 1.992
+
+# 用于FeatureHasher的维度
+encode_len = 16

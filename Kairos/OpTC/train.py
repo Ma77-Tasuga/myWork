@@ -72,7 +72,7 @@ def train(train_data):
 
         y_true=[]
         for m in msg:
-            l=tensor_find(m[16:-16],1)-1
+            l=tensor_find(m[16:-16],1)-1 # 查找one-hot编码中1的位置
             y_true.append(l)
 
         y_true = torch.tensor(y_true)

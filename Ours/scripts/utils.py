@@ -67,7 +67,6 @@ def timestamp_to_datetime_US(ns):
 """
     计算初始嵌入
 """
-encode_len = 16
 FH_string = FeatureHasher(n_features=encode_len, input_type="string")
 # FH输出的特征向量的维度为16
 
@@ -134,7 +133,7 @@ def str2tensor(msg_type, msg):
     #     print(h_msg)
     return vec
 
-
+# 边类型的one-hot编码器
 edge2vec = torch.nn.functional.one_hot(torch.arange(0, edge_type_num), num_classes=edge_type_num)
 
 """

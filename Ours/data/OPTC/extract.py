@@ -5,17 +5,19 @@ from Ours.scripts.utils import *
 import torch
 from torch_geometric.data import TemporalData
 import networkx as nx
-# TODO: 现在还没有实现解耦合
 """
     step3
     parsed_data -> using_data
-    fix map: uuid2index
-    feat: nx graph
+    fix: map/uuid2index
+    feat: graph/graph.graphml, map/coupling_node
 """
 
 data_folder = './parsed_data'
 data_path = './parsed_data/SysClient0201.csv'
 map_folder = './map'
+gt_path = './ground_truth/ground_truth.txt'
+
+show_cnt = 2000
 
 rel2id = {0: 'OPEN',
           'OPEN': 0,
@@ -57,6 +59,12 @@ if __name__ == '__main__':
     coupling_node_dic = {} # 这个歌用来存储节点的耦合次数，用于配合赋予新的节点id
     graph = nx.DiGraph() # 有向图
 
+    with open(gt_path,'r',encoding='utf-8') as gt_f:
+        gt_list = [line.strip() for line in gt_f]
+
+    gt_set = set(gt_list)
+    assert len(gt_set)==len(gt_list), f'conflict in gt file, num gt_set is {len(gt_set)} while num gt_list is {len(gt_list)}'
+    del gt_list # 节省点内存
 
     # set是无序集合，不能通过下标索引
     # for key in node_uuid2index.keys():
@@ -72,10 +80,11 @@ if __name__ == '__main__':
     with open(data_path, 'r', encoding='utf-8', newline='') as f:
         reader = csv.DictReader(f)
         cnt = 0
-
+        num_coupling = 0 # 埋点
         start_time = time.time()
 
         """读取预处理的日志流"""
+        print(f'Constructing graph.....')
         for row in reader:
             # 从 CSV 文件中读取需要导入的数据
             actorID = row['actorID']
@@ -113,17 +122,26 @@ if __name__ == '__main__':
 
             # 插入节点，事先检查节点是否存在
             if src_nodeId not in graph:
-                graph.add_node(src_nodeId, name=actorname, node_type='PROCESS')
+                gt = 0
+                if actorID in gt_set:
+                    gt = 1
+                graph.add_node(src_nodeId, name=actorname, node_type='PROCESS', gt=gt)
             if dst_nodeId not in graph:
-                graph.add_node(dst_nodeId, name=objectname, node_type=object_type)
+                gt = 0
+                if objectID in gt_set:
+                    gt =1
+                graph.add_node(dst_nodeId, name=objectname, node_type=object_type, gt=gt)
 
             if graph.in_degree(dst_nodeId) >=1:
                 # 更新冲突的目的节点（分裂）
                 dst_nodeId = node_counter
                 node_counter += 1
-
+                num_coupling +=1 #埋点
                 # 插入新分裂的节点
-                graph.add_node(dst_nodeId,name=objectname,node_type=object_type)
+                gt =0
+                if objectID in gt_set:
+                    gt = 1
+                graph.add_node(dst_nodeId,name=objectname,node_type=object_type,gt=gt)
                 graph.add_edge(src_nodeId, dst_nodeId, edge_type=action, timestamp=timestamp, phrase=phrase)
 
                 """更新索引"""
@@ -144,8 +162,6 @@ if __name__ == '__main__':
                 graph.add_edge(src_nodeId, dst_nodeId, edge_type=action, timestamp=timestamp, phrase=phrase)
 
 
-
-
             """将处理好的数据向量化，保存"""
             msg_list.append(torch.cat([str2tensor('PROCESS', actorname),
                                        edge2vec[rel2id[action]],  # 这个就是one-hot编码
@@ -159,12 +175,13 @@ if __name__ == '__main__':
             t_list.append(int(datetime_to_timestamp_US(timestamp)))
             # print(f'{actorID=} {actorname=} {objectID=} {objectname=} {action=} {timestamp=} {pid=} {ppid=} {object_type=} {phrase=}')
             """计数计时"""
-            if cnt % 2000 == 0:
+            if cnt % show_cnt == 0:
                 end_time = time.time()
                 print(f'Now {cnt} lines imported, using time {end_time - start_time} s.')
                 start_time = end_time
 
     """制作成时间数据集"""
+    print(f'Transfer to TemporalData......')
     dataset = TemporalData()
     dataset.src = torch.tensor(src_list)
     dataset.dst = torch.tensor(dst_list)
@@ -177,5 +194,12 @@ if __name__ == '__main__':
     dataset.t = dataset.t.to(torch.long)
     dataset.y = dataset.y.to(torch.long)
     dataset.msg = dataset.msg.to(torch.float)
-
+    print(f'Saving dataset.....')
     torch.save(dataset,f'./using_data/optc.TemporalData')
+    print(f'Saving nodeId map.....')
+    torch.save(node_uuid2index, osp.join(map_folder, 'uuid2index'))
+    torch.save(coupling_node_dic, osp.join(map_folder, 'coupling_node'))
+    print(f'Saving graph.....')
+    nx.write_graphml(graph,"./graph/graph.graphml")
+    print(f'All done.')
+    print(f'{num_coupling=}, len of uuid2index after={len(node_uuid2index)}') # 打印埋点
