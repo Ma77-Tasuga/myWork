@@ -13,40 +13,40 @@ class Test:
         self.data = data
         self.memory = TGNMemory(
             max_node_num,
-            edge_type_num,
+            self.data.msg.size(-1),
             memory_dim,
             time_dim,
-            message_module=IdentityMessage(edge_type_num, memory_dim, time_dim),
+            message_module=IdentityMessage(self.data.msg.size(-1), memory_dim, time_dim),
             aggregator_module=LastAggregator(),
         ).to(device)
         self.gnn = GraphAttentionEmbedding(
             in_channels=memory_dim,
             out_channels=embedding_dim,
-            msg_dim=edge_type_num,
+            msg_dim=self.data.msg.size(-1),
             time_enc=self.memory.time_enc,
         ).to(device)
         self.neighbor_loader = LastNeighborLoader(max_node_num, size=neighbor_size, device=device)
-        # self.link_pred = LinkPredictor(in_channels=embedding_dim).to(device)
-        self.classifier = NodeClassifier(embedding_dim=embedding_dim, num_classes=node_type_num).to(device)
+        self.link_pred = LinkPredictor(in_channels=embedding_dim, out_channels=edge_type_num).to(device)
+        # self.classifier = NodeClassifier(embedding_dim=embedding_dim, num_classes=node_type_num).to(device)
         # | 是取并集操作
         # self.optimizer = torch.optim.Adam(
         #     set(self.memory.parameters()) | set(self.gnn.parameters())
         #     | set(self.classifier.parameters()), lr=0.00005, eps=1e-08, weight_decay=0.01)
         self.optimizer = torch.optim.Adam(
             set(self.memory.parameters()) | set(self.gnn.parameters())
-            | set(self.classifier.parameters()), lr=lr, eps=1e-08, weight_decay=weight_decay)
+            | set(self.link_pred.parameters()), lr=lr, eps=1e-08, weight_decay=weight_decay)
         self.criterion = nn.CrossEntropyLoss()
         # 将某个批次内的节点创建索引
         # 将全局索引映射到局部索引，即节点id到内存索引的关系
         self.assoc = torch.empty(max_node_num, dtype=torch.long, device=device)
 
-    def data2vec(self):
-        edge2vec = torch.nn.functional.one_hot(torch.arange(0, edge_type_num), num_classes=edge_type_num)
-        encoded_msg = []
-
-        for msg in self.data.msg:
-            encoded_msg.append(edge2vec[msg])
-        self.data.msg = torch.vstack(encoded_msg)
+    # def data2vec(self):
+    #     edge2vec = torch.nn.functional.one_hot(torch.arange(0, edge_type_num), num_classes=edge_type_num)
+    #     encoded_msg = []
+    #
+    #     for msg in self.data.msg:
+    #         encoded_msg.append(edge2vec[msg])
+    #     self.data.msg = torch.vstack(encoded_msg)
 
     @torch.no_grad()
     def test(self):
@@ -88,21 +88,21 @@ class Test:
             z = self.gnn(z, last_update, edge_index, self.data.t[e_id.to(torch.device('cpu'))],
                          self.data.msg[e_id.to(torch.device('cpu'))])
 
-            pos_out = self.classifier(z[self.assoc[batch_n_id]])
-
+            # pos_out = self.classifier(z[self.assoc[batch_n_id]])
+            pos_out = self.link_pred(z[self.assoc[src]], z[self.assoc[pos_dst]])
             # 把pos_out按照第0维拼起来，但是只有一个tensor的时候应该是没有区别
             y_pred = torch.cat([pos_out], dim=0)
 
             # 这里应该就是传全局索引
             # y_true = self.data.y[self.assoc[batch_n_id].to(torch.device('cpu'))]
-            y_true = self.data.y[batch_n_id.to(torch.device('cpu'))]
-
+            # y_true = self.data.y[batch_n_id.to(torch.device('cpu'))]
+            y_true = batch.y
             loss = self.criterion(y_pred, y_true.to(device))
             total_loss += float(loss) * batch.num_events
 
             # Update memory and neighbor loader with ground-truth state.
             self.memory.update_state(src, pos_dst, t, msg.to(torch.float32))
-            self.neighbor_loader.insert(src, pos_dst)
+            self.neighbor_loader.insert(src, pos_dst) # 因为是时间流图，neighbor_loader感知不到之后的节点
 
             each_node_loss = cal_pos_ndoe_loss_multiclass(pos_out, y_true.to(device))
 

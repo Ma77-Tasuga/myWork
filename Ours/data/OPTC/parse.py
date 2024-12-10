@@ -3,18 +3,19 @@ import time
 import json
 import os.path as osp
 import torch
-
+import os
 """
     step2 解析txt文件中的原始日志条目，生成一个csv文件以用于导入数据库
     raw_data -> parsed_data
     feat: nodeId_dic to map
 """
 
-
-origin_file = './raw_data/SysClient0201.systemia.com.txt'  # 原始日志文件
+benign_file_folder = './raw_data/benign'
+benign_file_write_folder = './parsed_data/benign'
+# origin_file = './raw_data/SysClient0201.systemia.com.txt'  # 原始日志文件
 num_show =1000 # 控制打印进度的日志行数
-write_file = './parsed_data/SysClient0201.csv'
-map_folder = './map'
+# write_file = './parsed_data/SysClient0201.csv'
+benign_map_folder = './map/benign'
 
 """检查是否存在不需要的字段"""
 def is_valid_entry(entry) -> bool:
@@ -120,51 +121,53 @@ def load_data(file_path):
 
 if __name__ == '__main__':
     """ 数据处理 """
-    start_time = time.time()
+    for filename in os.listdir(benign_file_folder):
+        hostname = filename.split('.')[0]
+        print(f'start parsing {hostname}')
+        start_time = time.time()
+        data = load_data(osp.join(benign_file_folder,filename))
+        end_time = time.time()
+        data_len = len(data)
+        print(f'Num of lines: {data_len}')
+        print(f'Eclipse time: {end_time-start_time} s.')
 
-    data = load_data(origin_file)
-    end_time = time.time()
-    data_len = len(data)
-    print(f'Num of lines: {data_len}')
-    print(f'Eclipse time: {end_time-start_time} s.')
+        nodeId_list = []
+        """ 写入csv """
+        start_time = time.time()
+        with open(osp.join(benign_file_write_folder,hostname+'.csv'), 'w', newline='') as wf:
+            writer = csv.writer(wf)
 
-    nodeId_list = []
-    """ 写入csv """
-    start_time = time.time()
-    with open(write_file, 'w', newline='') as wf:
-        writer = csv.writer(wf)
+            # 写入CSV表头
+            writer.writerow(['actorID', 'actorname', 'objectID', 'objectname', 'action', 'timestamp', 'pid', 'ppid', 'object', 'phrase'])
 
-        # 写入CSV表头
-        writer.writerow(['actorID', 'actorname', 'objectID', 'objectname', 'action', 'timestamp', 'pid', 'ppid', 'object', 'phrase'])
+            # 写入每行数据
+            for entry in data:
+                # nodeId_list.append((entry['actorname'],entry['actorID']))
+                # nodeId_list.append((entry['objectname'],entry['objectID']))
+                nodeId_list.append(frozenset((entry['ppid'],entry['actorID'])))
+                nodeId_list.append(frozenset((entry['pid'],entry['objectID'])))
+                writer.writerow([
+                    entry['actorID'],
+                    entry['actorname'],
+                    entry['objectID'],
+                    entry['objectname'],
+                    entry['action'],
+                    entry['timestamp'],
+                    entry['pid'],
+                    entry['ppid'],
+                    entry['object'],
+                    entry['phrase']
+                ])
+        print(f"len nodeId_list:{len(nodeId_list)}")
+        nodeId_list = list(set(nodeId_list)) # 去重
+        print(f'len nodeId_set:{len(nodeId_list)}')
+        """构建节点索引"""
+        nodeId_dic = {}
+        for i in range(len(nodeId_list)):
+            nodeId_dic[nodeId_list[i]] = i
+            nodeId_dic[i] = nodeId_list[i]
+        print(f'len node_dic:{len(nodeId_dic)}')
+        torch.save(nodeId_dic, osp.join(benign_map_folder, hostname+'_uuid2index'))
 
-        # 写入每行数据
-        for entry in data:
-            # nodeId_list.append((entry['actorname'],entry['actorID']))
-            # nodeId_list.append((entry['objectname'],entry['objectID']))
-            nodeId_list.append(frozenset((entry['ppid'],entry['actorID'])))
-            nodeId_list.append(frozenset((entry['pid'],entry['objectID'])))
-            writer.writerow([
-                entry['actorID'],
-                entry['actorname'],
-                entry['objectID'],
-                entry['objectname'],
-                entry['action'],
-                entry['timestamp'],
-                entry['pid'],
-                entry['ppid'],
-                entry['object'],
-                entry['phrase']
-            ])
-    print(f"len nodeId_list:{len(nodeId_list)}")
-    nodeId_list = list(set(nodeId_list)) # 去重
-    print(f'len nodeId_set:{len(nodeId_list)}')
-    """构建节点索引"""
-    nodeId_dic = {}
-    for i in range(len(nodeId_list)):
-        nodeId_dic[nodeId_list[i]] = i
-        nodeId_dic[i] = nodeId_list[i]
-    print(f'len node_dic:{len(nodeId_dic)}')
-    torch.save(nodeId_dic, osp.join(map_folder, 'uuid2index'))
-
-    end_time = time.time()
-    print(f"Data has been written to output.csv, using time {end_time-start_time} s.")
+        end_time = time.time()
+        print(f"Data has been written, using time {end_time-start_time} s.")

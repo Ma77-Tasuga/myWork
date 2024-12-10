@@ -111,7 +111,7 @@ class Trainer():
             y_pred = torch.cat([pos_out], dim=0)
 
 
-            """"""
+
             # y_true = self.data.y[self.assoc[batch_n_id].to(torch.device('cpu'))]
             # y_true = self.data.y[batch_n_id.to(torch.device('cpu'))]
             y_true = batch.y
