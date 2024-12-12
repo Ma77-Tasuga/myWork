@@ -4,6 +4,7 @@ import json
 import os.path as osp
 import torch
 import os
+from Ours.scripts.utils import datetime_to_timestamp_US
 """
     step2 解析txt文件中的原始日志条目，生成一个csv文件以用于导入数据库
     raw_data -> parsed_data
@@ -12,9 +13,7 @@ import os
 
 benign_file_folder = './raw_data/benign'
 benign_file_write_folder = './parsed_data/benign'
-# origin_file = './raw_data/SysClient0201.systemia.com.txt'  # 原始日志文件
 num_show =1000 # 控制打印进度的日志行数
-# write_file = './parsed_data/SysClient0201.csv'
 benign_map_folder = './map/benign'
 
 """检查是否存在不需要的字段"""
@@ -106,6 +105,7 @@ def transform(text):
     phrases = [Sentence_Construction(x) for x in data if Sentence_Construction(x)] #返回特殊属性的一些关键部分
     for datum, phrase in zip(data, phrases): # datum是data的引用，而不是副本
         datum['phrase'] = phrase
+        datum['timestamp'] = str(datetime_to_timestamp_US(datum['timestamp']))
 
     return data
 
@@ -113,7 +113,7 @@ def transform(text):
 def load_data(file_path):
     with open(file_path, 'r') as file:
         content = [json.loads(line.strip()) for line in file]
-
+    print(f'{len(content)} lines were loaded.')
     return transform(content)
 
 
@@ -123,13 +123,19 @@ if __name__ == '__main__':
     """ 数据处理 """
     for filename in os.listdir(benign_file_folder):
         hostname = filename.split('.')[0]
-        print(f'start parsing {hostname}')
+        print(f'start parsing {hostname} from file {osp.join(benign_file_folder, filename)}.')
         start_time = time.time()
         data = load_data(osp.join(benign_file_folder,filename))
         end_time = time.time()
         data_len = len(data)
-        print(f'Num of lines: {data_len}')
+        print(f'Num of lines after parsing: {data_len}')
         print(f'Eclipse time: {end_time-start_time} s.')
+
+        """排序"""
+        start_time = time.time()
+        data = sorted(data, key=lambda x: int(x['timestamp']))
+        end_time = time.time()
+        print(f'Finish sorting, using {end_time-start_time} s.')
 
         nodeId_list = []
         """ 写入csv """
