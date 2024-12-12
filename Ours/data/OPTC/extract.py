@@ -14,13 +14,12 @@ import networkx as nx
 """
 is_evaluation = False
 benign_data_folder = './parsed_data/benign'
-# data_path = './parsed_data/SysClient0201.csv'
 benign_map_folder = './map/benign'
 benign_graph_folder = './graph/benign'
 write_benign_folder = './using_data/benign'
 gt_path = './ground_truth/ground_truth.txt'
 
-show_cnt = 2000
+show_cnt = 5000
 
 rel2id = {0: 'OPEN',
           'OPEN': 0,
@@ -55,6 +54,7 @@ nodeType2id={0: 'PROCESS',
 if __name__ == '__main__':
 
     for filename in os.listdir(benign_data_folder):
+        print(f'Start parsing file: {filename}')
         hostname = filename.split('.')[0]
         """读取id映射"""
         node_uuid2index = torch.load(osp.join(benign_map_folder, hostname+'_uuid2index'))  # 从0开始
@@ -84,6 +84,12 @@ if __name__ == '__main__':
         y_list = []
         msg_list = []
         t_list = []
+
+        """行数统计"""
+        with open(osp.join(benign_data_folder, filename), 'r', encoding='utf-8', newline='') as fc:
+            lines = fc.readlines()
+            all_line_count = len(lines)
+            del lines
 
         with open(osp.join(benign_data_folder, filename), 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -180,12 +186,13 @@ if __name__ == '__main__':
                 src_list.append(src_nodeId)
                 dst_list.append(dst_nodeId)
                 y_list.append(rel2id[action])
-                t_list.append(int(datetime_to_timestamp_US(timestamp)))
+                t_list.append(int(timestamp))
+
                 # print(f'{actorID=} {actorname=} {objectID=} {objectname=} {action=} {timestamp=} {pid=} {ppid=} {object_type=} {phrase=}')
                 """计数计时"""
                 if cnt % show_cnt == 0:
                     end_time = time.time()
-                    print(f'Now {cnt} lines imported, using time {end_time - start_time} s.')
+                    print(f'Now {cnt} out of {all_line_count} lines imported, using time {end_time - start_time} s.')
                     start_time = end_time
 
         """制作成时间数据集"""
