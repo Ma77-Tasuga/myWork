@@ -16,7 +16,7 @@ import numpy as np
 
 """
     step1
-    假设数据已下载并解压
+    从using_data中获取数据
 """
 
 
@@ -81,12 +81,12 @@ class Trainer():
             # now_data = cnt * BATCH
             # print(f'Now finish {now_data}')
             self.optimizer.zero_grad()
-
+            batch = batch.to(device)
             src, pos_dst, t, msg = batch.src, batch.dst, batch.t, batch.msg
-            src = src.to(device)
-            pos_dst = pos_dst.to(device)
-            t = t.to(device)
-            msg = msg.to(device)
+            # src = src.to(device)
+            # pos_dst = pos_dst.to(device)
+            # t = t.to(device)
+            # msg = msg.to(device)
 
             # 这个是全局id
             batch_n_id = torch.cat([src, pos_dst]).unique()  # 将源节点和目的节点合并去重
@@ -144,13 +144,15 @@ class Trainer():
 if __name__ == '__main__':
     """读取和保存路径"""
 
-    data_dir = './data/OPTC/using_data'
-    map_dir = './data/OPTC/map'
+    data_dir = './data/OPTC/using_data/benign'
+    map_dir = './data/OPTC/map/benign'
+
+    dataset_name = 'SysClient0201'
 
     """数据加载"""
-    train_data = torch.load(osp.join(data_dir, 'optc.TemporalData'))
+    train_data = torch.load(osp.join(data_dir, dataset_name +'.TemporalData'))
 
-    node_uuid2index = torch.load(osp.join(map_dir, 'uuid2index'))
+    node_uuid2index = torch.load(osp.join(map_dir, dataset_name + '_uuid2index'))
     # 检查uuid2index表是否是偶数
     assert len(node_uuid2index) % 2 == 0, f'error in num of uuid2index map, num of map is {len(node_uuid2index)}'
 
@@ -172,5 +174,5 @@ if __name__ == '__main__':
         print(f'  Epoch: {epoch:02d}, Loss: {loss:.4f}')
 
     print(f'Saving model....')
-    save_path = f"./weights/model_optc_epoch={num_epoch}_lr={lr}_weight_decay={weight_decay}_loss={loss:.4f}.pt"
+    save_path = f"./weights/{dataset_name}_epoch={num_epoch}_lr={lr}_loss={loss:.4f}.pt"
     trainer.save(save_path)

@@ -184,12 +184,22 @@ def hashgen(l):
 """
     metrics计算相关函数
 """
-def cal_pos_ndoe_loss_multiclass(pred_ratio,labels):
+def cal_pos_node_loss_multiclass(pred_ratio,labels):
     loss=[]
     criterion = nn.CrossEntropyLoss()
     for i in range(len(pred_ratio)):
         loss.append(criterion(pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
     return torch.tensor(loss)
+
+
+# 应该先计算边重建损失，返回单个loss组成的列表
+def cal_pos_edge_loss_multiclass(pred_ratio,labels):
+    loss=[]
+    criterion = nn.CrossEntropyLoss()
+    for i in range(len(pred_ratio)):
+        loss.append(criterion(pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
+    return torch.tensor(loss)
+
 
 def cal_metrics(gt, node_dic, gate, node_uuid2index):
     gate = float(gate)

@@ -2,16 +2,18 @@ import io
 import gzip
 import os.path as osp
 import time
-
+from Ours.scripts.config import is_evaluation
 from os import walk
 """
     step1 解压
     zip_data -> raw_data
 """
-
-data_folder = "./zip_data/benign"
-out_folder = "./raw_data/benign"
-
+if is_evaluation:
+    data_folder = "./zip_data/evaluation"
+    out_folder = "./raw_data/evaluation"
+else:
+    data_folder = "./zip_data/benign"
+    out_folder = "./raw_data/benign"
 
 # 传入的两个变量都应该是list
 # 这个代码会以追加模式写入，请事先删除已经存在的输出文件（raw_data文件夹）
@@ -55,9 +57,9 @@ if __name__ == "__main__":
             res.append(temp_file_path)
 
     print(res)
-    do_res = []
-    for file in res:
-        if '17-18Sep19' in file:
-            do_res.append(file)
+    # do_res = []
+    # for file in res:
+    #     if '17-18Sep19' in file:
+    #         do_res.append(file)
 
-    extract_logs(do_res, hostId_list)
+    extract_logs(res, hostId_list)

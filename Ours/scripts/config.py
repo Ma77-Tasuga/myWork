@@ -1,5 +1,8 @@
 import torch
 
+# 控制原始数据解析的控制位
+# True：处理异常数据
+is_evaluation = True
 
 device = torch.device('cuda:2')
 # device  = torch.device('cpu')

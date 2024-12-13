@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import time
 from Ours.scripts.utils import *
+from Ours.scripts.config import is_evaluation
 import torch
 from torch_geometric.data import TemporalData
 import networkx as nx
@@ -12,11 +13,18 @@ import networkx as nx
     fix: map/uuid2index
     feat: graph/graph.graphml, map/coupling_node
 """
-is_evaluation = False
-benign_data_folder = './parsed_data/benign'
-benign_map_folder = './map/benign'
-benign_graph_folder = './graph/benign'
-write_benign_folder = './using_data/benign'
+if is_evaluation:
+    data_folder = './parsed_data/evaluation'
+    map_folder = './map/evaluation'
+    graph_folder = './graph/evaluation'
+    write_data_folder = './using_data/evaluation'
+else:
+    data_folder = './parsed_data/benign'
+    map_folder = './map/benign'
+    graph_folder = './graph/benign'
+    write_data_folder = './using_data/benign'
+
+
 gt_path = './ground_truth/ground_truth.txt'
 
 show_cnt = 5000
@@ -53,11 +61,11 @@ nodeType2id={0: 'PROCESS',
 
 if __name__ == '__main__':
 
-    for filename in os.listdir(benign_data_folder):
+    for filename in os.listdir(data_folder):
         print(f'Start parsing file: {filename}')
         hostname = filename.split('.')[0]
         """读取id映射"""
-        node_uuid2index = torch.load(osp.join(benign_map_folder, hostname+'_uuid2index'))  # 从0开始
+        node_uuid2index = torch.load(osp.join(map_folder, hostname+'_uuid2index'))  # 从0开始
         assert len(node_uuid2index) % 2 == 0, f"error in len of node_uuid2index: {len(node_uuid2index)}"
         # 如果要插入新映射的起始id（因为第一个id是0）
         node_counter = len(node_uuid2index) / 2 # 节点id计数器，也是新增分裂节点的下标
@@ -86,12 +94,12 @@ if __name__ == '__main__':
         t_list = []
 
         """行数统计"""
-        with open(osp.join(benign_data_folder, filename), 'r', encoding='utf-8', newline='') as fc:
+        with open(osp.join(data_folder, filename), 'r', encoding='utf-8', newline='') as fc:
             lines = fc.readlines()
             all_line_count = len(lines)
             del lines
 
-        with open(osp.join(benign_data_folder, filename), 'r', encoding='utf-8', newline='') as f:
+        with open(osp.join(data_folder, filename), 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
             cnt = 0
             num_coupling = 0 # 埋点
@@ -210,11 +218,11 @@ if __name__ == '__main__':
         dataset.y = dataset.y.to(torch.long)
         dataset.msg = dataset.msg.to(torch.float)
         print(f'Saving dataset.....')
-        torch.save(dataset,osp.join(write_benign_folder, hostname+'.TemporalData'))
+        torch.save(dataset,osp.join(write_data_folder, hostname+'.TemporalData'))
         print(f'Saving nodeId map.....')
-        torch.save(node_uuid2index, osp.join(benign_map_folder, hostname + '_uuid2index'))
-        torch.save(coupling_node_dic, osp.join(benign_map_folder, hostname+'_coupling_node'))
+        torch.save(node_uuid2index, osp.join(map_folder, hostname + '_uuid2index'))
+        torch.save(coupling_node_dic, osp.join(map_folder, hostname+'_coupling_node'))
         print(f'Saving graph.....')
-        nx.write_graphml(graph, osp.join(benign_graph_folder, hostname+"_graph.graphml"))
+        nx.write_graphml(graph, osp.join(graph_folder, hostname+"_graph.graphml"))
         print(f'All done.')
         print(f'{num_coupling=}, len of uuid2index after={len(node_uuid2index)}') # 打印埋点

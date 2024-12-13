@@ -5,16 +5,23 @@ import os.path as osp
 import torch
 import os
 from Ours.scripts.utils import datetime_to_timestamp_US
+from Ours.scripts.config import is_evaluation
 """
     step2 解析txt文件中的原始日志条目，生成一个csv文件以用于导入数据库
+    会将时间戳转化成nanoUS字符串格式
     raw_data -> parsed_data
     feat: nodeId_dic to map
 """
+if is_evaluation:
+    file_folder = './raw_data/evaluation'
+    file_write_folder = './parsed_data/evaluation'
+    map_folder = './map/evaluation'
+else:
+    file_folder = './raw_data/benign'
+    file_write_folder = './parsed_data/benign'
+    map_folder = './map/benign'
 
-benign_file_folder = './raw_data/benign'
-benign_file_write_folder = './parsed_data/benign'
 num_show =1000 # 控制打印进度的日志行数
-benign_map_folder = './map/benign'
 
 """检查是否存在不需要的字段"""
 def is_valid_entry(entry) -> bool:
@@ -121,11 +128,11 @@ def load_data(file_path):
 
 if __name__ == '__main__':
     """ 数据处理 """
-    for filename in os.listdir(benign_file_folder):
+    for filename in os.listdir(file_folder):
         hostname = filename.split('.')[0]
-        print(f'start parsing {hostname} from file {osp.join(benign_file_folder, filename)}.')
+        print(f'start parsing {hostname} from file {osp.join(file_folder, filename)}.')
         start_time = time.time()
-        data = load_data(osp.join(benign_file_folder,filename))
+        data = load_data(osp.join(file_folder,filename))
         end_time = time.time()
         data_len = len(data)
         print(f'Num of lines after parsing: {data_len}')
@@ -140,7 +147,7 @@ if __name__ == '__main__':
         nodeId_list = []
         """ 写入csv """
         start_time = time.time()
-        with open(osp.join(benign_file_write_folder,hostname+'.csv'), 'w', newline='') as wf:
+        with open(osp.join(file_write_folder,hostname+'.csv'), 'w', newline='') as wf:
             writer = csv.writer(wf)
 
             # 写入CSV表头
@@ -173,7 +180,7 @@ if __name__ == '__main__':
             nodeId_dic[nodeId_list[i]] = i
             nodeId_dic[i] = nodeId_list[i]
         print(f'len node_dic:{len(nodeId_dic)}')
-        torch.save(nodeId_dic, osp.join(benign_map_folder, hostname+'_uuid2index'))
+        torch.save(nodeId_dic, osp.join(map_folder, hostname+'_uuid2index'))
 
         end_time = time.time()
         print(f"Data has been written, using time {end_time-start_time} s.")

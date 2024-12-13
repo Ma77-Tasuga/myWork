@@ -1,3 +1,5 @@
+import os
+
 import torch
 from scripts.config import *
 from scripts.utils import *
@@ -7,7 +9,10 @@ from scripts.model import *
 from torch_geometric.nn.models.tgn import (LastNeighborLoader, IdentityMessage, MeanAggregator,
                                            LastAggregator)
 
-
+"""
+    step2
+    测试，会保存一个包含节点id和loss的dic列表文件，后续可以直接读取该文件进行测试
+"""
 class Test:
     def __init__(self, data, max_node_num):
         self.data = data
@@ -97,23 +102,28 @@ class Test:
             # y_true = self.data.y[self.assoc[batch_n_id].to(torch.device('cpu'))]
             # y_true = self.data.y[batch_n_id.to(torch.device('cpu'))]
             y_true = batch.y
-            loss = self.criterion(y_pred, y_true.to(device))
+            loss = self.criterion(y_pred, y_true.to(device)) # 返回该批次的平均损失
             total_loss += float(loss) * batch.num_events
 
             # Update memory and neighbor loader with ground-truth state.
             self.memory.update_state(src, pos_dst, t, msg.to(torch.float32))
-            self.neighbor_loader.insert(src, pos_dst) # 因为是时间流图，neighbor_loader感知不到之后的节点
+            self.neighbor_loader.insert(src, pos_dst) # 因为是时间流图，neighbor_loader应该感知不到之后的节点
 
-            each_node_loss = cal_pos_ndoe_loss_multiclass(pos_out, y_true.to(device))
+            each_edge_loss = cal_pos_edge_loss_multiclass(pos_out, y_true.to(device))
 
             for i in range(len(pos_out)):
-                node = int(batch_n_id[i])
-                loss = each_node_loss[i]
+                # node_src = int(batch_n_id[i])
+                # node_dst = int()
+                loss = each_edge_loss[i]
 
-                # TODO 保留一下时间
                 temp_dic = {
                     'loss': float(loss),
-                    'nodeId': node,
+                    'nodeId': src,
+                }
+                node_list.append(temp_dic)
+                temp_dic = {
+                    'loss': float(loss),
+                    'nodeId': pos_dst,
                 }
                 node_list.append(temp_dic)
         return node_list
@@ -131,42 +141,47 @@ class Test:
 if __name__ == '__main__':
     """读取和保存路径"""
 
-    data_dir = './data/DARPA_T3/using_data/test'
-    gt_dir = './data/DARPA_T3/ground_truth'
-    weight_path = './weights/model_saved_trace_epoch=15_lr=1e-05_weight_decay=0_loss=1.1733505676495715.pt'
+    data_name = 'SysClient0201'
+
+    data_dir = './data/OPTC/using_data/evaluation'
+    map_dir = './data/OPTC/map/evaluation'
+    gt_path = './data/OPTC/ground_truth/ground_truth.txt'
+    anomaly_dir = './anomaly_graph'
+
+    weight_path = './weights/SysClient0201_epoch=25_lr=1e-05_loss=1.1693.pt'
 
     """数据加载"""
-    test_data = torch.load(osp.join(data_dir, 'trace.TemporalData'))
-    node_uuid2index = torch.load(osp.join(data_dir, 'trace_uuid2index'))
-    gt_node_uuid = set()
-    with open(osp.join(gt_dir, 'trace.txt'), 'r', encoding='utf-8') as f:
-        for line in f:
-            gt_node_uuid.add(line.strip())
+    test_data = torch.load(osp.join(data_dir, data_name+'.TemporalData'))
+    node_uuid2index = torch.load(osp.join(map_dir, data_name + '_uuid2index'))
+    '''gt加载'''
+    # gt_node_uuid = set()
+    # with open(gt_path, 'r', encoding='utf-8') as f:
+    #     for line in f:
+    #         gt_node_uuid.add(line.strip())
 
     max_num_node = len(node_uuid2index) // 2 + 1
 
     print(f'{max_num_node=}')
-    # 控制一下内存，训练阶段这个东西应该确实也没有什么用
 
     print(f"num train data {len(test_data.msg)}")
     saved_nodes = set()
     print(f'Initiating class....')
     tester = Test(test_data, max_num_node + 2)
 
-    print(f'Transfer data....')
-    tester.data2vec()
+    # print(f'Transfer data....')
+    # tester.data2vec()
 
     print(f'loading weight: {weight_path}')
     tester.load_model(weight_path)
     print(f'Start testing...')
 
-    node_dic = tester.test()
-    weight_name =  weight_path.split('/')[-1].split('.')[0]
-    torch.save(node_dic,f'./node_dic_list_{weight_name}')
+    node_loss_list = tester.test()
+    # weight_name =  weight_path.split('/')[-1].split('.')[0]
+    torch.save(node_loss_list,osp.join(anomaly_dir, f'node_dic_list_{data_name}'))
     print(f'finish saving...')
 
     # node_dic = torch.load('./node_dic_list_model_saved_trace')
-    result = cal_metrics(gt_node_uuid, node_dic, gate, node_uuid2index)
-    print(f'calculating metrics...')
-    for metric, value in result.items():
-        print(f"{metric}: {value:.4f}")
+    # result = cal_metrics(gt_node_uuid, node_loss_list, gate, node_uuid2index)
+    # print(f'calculating metrics...')
+    # for metric, value in result.items():
+    #     print(f"{metric}: {value:.4f}")
