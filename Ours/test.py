@@ -118,12 +118,12 @@ class Test:
 
                 temp_dic = {
                     'loss': float(loss),
-                    'nodeId': src,
+                    'nodeId': src[i],
                 }
                 node_list.append(temp_dic)
                 temp_dic = {
                     'loss': float(loss),
-                    'nodeId': pos_dst,
+                    'nodeId': pos_dst[i],
                 }
                 node_list.append(temp_dic)
         return node_list

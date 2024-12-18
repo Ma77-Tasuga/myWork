@@ -12,8 +12,6 @@ import networkx as nx
     parsed_data -> using_data
     fix: map/uuid2index
     feat: graph/graph.graphml, map/coupling_node
-    暂时改了map、graph名，注意改回来
-    using_data也会被覆盖
 """
 if is_evaluation:
     data_folder = './parsed_data/evaluation'
@@ -47,10 +45,6 @@ rel2id = {0: 'OPEN',
           'DELETE': 6,
           7: 'WRITE',
           'WRITE': 7,
-          8: 'START',
-          'START': 8,
-          9: 'TERMINATE',
-          'TERMINATE': 9,
           # 8: 'LOAD',
           # 'LOAD': 8,
           }
@@ -71,7 +65,7 @@ if __name__ == '__main__':
         print(f'Start parsing file: {filename}')
         hostname = filename.split('.')[0]
         """读取id映射"""
-        node_uuid2index = torch.load(osp.join(map_folder, hostname+'_name_uuid2index'))  # 从0开始
+        node_uuid2index = torch.load(osp.join(map_folder, hostname+'_uuid2index'))  # 从0开始
         assert len(node_uuid2index) % 2 == 0, f"error in len of node_uuid2index: {len(node_uuid2index)}"
         # 如果要插入新映射的起始id（因为第一个id是0）
         node_counter = len(node_uuid2index) / 2 # 节点id计数器，也是新增分裂节点的下标
@@ -132,12 +126,9 @@ if __name__ == '__main__':
                 object_type = list(object_type)[0]
                 cnt += 1
 
-                # srcId = frozenset((int(ppid), actorID))
-                # dstId = frozenset((int(pid), objectID))
-                # srcId = actorID
-                # dstId = objectID
-                srcId = frozenset((actorname, actorID))
-                dstId = frozenset((objectname, objectID))
+                srcId = frozenset((int(ppid), actorID))
+                dstId = frozenset((int(pid), objectID))
+
 
                 """图构建"""
                 # 一旦发生变动，下面这两个Id都要保持最新
@@ -146,15 +137,10 @@ if __name__ == '__main__':
                 # 检查节点是否是被分裂的节点，如果是，将其更新成最新的节点
                 if srcId in coupling_node_dic.keys():
                     actorID_new = actorID+'-'+str(coupling_node_dic[srcId])
-                    # src_nodeId = node_uuid2index[frozenset((int(ppid), actorID_new))]
-                    # src_nodeId = node_uuid2index[actorID_new]
-                    src_nodeId = node_uuid2index[frozenset((actorname, actorID_new))]
-
+                    src_nodeId = node_uuid2index[frozenset((int(ppid), actorID_new))]
                 if dstId in coupling_node_dic.keys():
                     objectID_new = objectID+'-'+str(coupling_node_dic[dstId])
-                    # dst_nodeId = node_uuid2index[frozenset((int(pid), objectID_new))]
-                    # dst_nodeId = node_uuid2index[objectID_new]
-                    dst_nodeId = node_uuid2index[frozenset((objectname, objectID_new))]
+                    dst_nodeId = node_uuid2index[frozenset((int(pid), objectID_new))]
 
                 # 插入节点，事先检查节点是否存在
                 if src_nodeId not in graph:
@@ -181,8 +167,7 @@ if __name__ == '__main__':
                     graph.add_edge(src_nodeId, dst_nodeId, edge_type=action, timestamp=timestamp, phrase=phrase)
 
                     """更新索引"""
-                    # 更新耦合次数索引,这个ditId是uuid和pid的set
-                    # 这个索引一定要放到边缘建立之后，不然遇到自环的情况可能会出问题
+                    # 更新耦合次数索引
                     if dstId not in coupling_node_dic.keys():
                         coupling_node_dic[dstId] = 1
                     else:
@@ -190,9 +175,7 @@ if __name__ == '__main__':
                     # 更新uuid和uuid索引
                     coupling_cnt = coupling_node_dic[dstId]
                     objectID_new = objectID+'-'+str(coupling_cnt) # e.p. uuid-1, uuid-112
-                    # dstId_new = frozenset((int(pid),objectID_new))
-                    # dstId_new = objectID_new
-                    dstId_new = frozenset((objectname, objectID_new))
+                    dstId_new = frozenset((int(pid),objectID_new))
                     # 下面用新的uuid为了避免索引混乱
                     node_uuid2index[dst_nodeId] = dstId_new
                     node_uuid2index[dstId_new] = dst_nodeId
@@ -237,9 +220,9 @@ if __name__ == '__main__':
         print(f'Saving dataset.....')
         torch.save(dataset,osp.join(write_data_folder, hostname+'.TemporalData'))
         print(f'Saving nodeId map.....')
-        torch.save(node_uuid2index, osp.join(map_folder, hostname + '_name_uuid2index'))
-        torch.save(coupling_node_dic, osp.join(map_folder, hostname+'_name_coupling_node'))
+        torch.save(node_uuid2index, osp.join(map_folder, hostname + '_uuid2index'))
+        torch.save(coupling_node_dic, osp.join(map_folder, hostname+'_coupling_node'))
         print(f'Saving graph.....')
-        nx.write_graphml(graph, osp.join(graph_folder, hostname+"_name_graph.graphml"))
+        nx.write_graphml(graph, osp.join(graph_folder, hostname+"_graph.graphml"))
         print(f'All done.')
         print(f'{num_coupling=}, len of uuid2index after={len(node_uuid2index)}') # 打印埋点

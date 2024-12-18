@@ -21,6 +21,7 @@ else:
     file_write_folder = './parsed_data/benign'
     map_folder = './map/benign'
 
+num_show =1000 # 控制打印进度的日志行数
 
 """检查是否存在不需要的字段"""
 def is_valid_entry(entry) -> bool:
@@ -29,15 +30,13 @@ def is_valid_entry(entry) -> bool:
                      'FLOW',
                      # 'MODULE',
                      }
-    # invalid_actions = {'START', 'TERMINATE'}
+    invalid_actions = {'START', 'TERMINATE'}
 
     object_valid = entry['object'] in valid_objects
-    # action_valid = entry['action'] not in invalid_actions
+    action_valid = entry['action'] not in invalid_actions
     actor_object_different = entry['actorID'] != entry['objectID'] # 保证不是自我操作，会导致自环
 
-    # return object_valid and action_valid and actor_object_different
-    return object_valid and actor_object_different
-
+    return object_valid and action_valid and actor_object_different
 
 
 """检查传入的data是否合规，并过滤可能的重复"""
@@ -59,7 +58,6 @@ def Traversal_Rules(data):
     return list(filtered_data.values())
 
 
-# 返回的是吧所有的描述按空格分割的结果
 def Sentence_Construction(entry):
     action = entry["action"]
     properties = entry['properties']
@@ -106,7 +104,6 @@ def Extract_Semantic_Info(event):
     return None
 
 
-# 提前进行了时间戳格式的转换
 def transform(text):
     labeled_data = [event for event in (Extract_Semantic_Info(x) for x in text) if event]
     # 日志去重操作
@@ -162,14 +159,10 @@ if __name__ == '__main__':
 
             # 写入每行数据
             for entry in data:
-                nodeId_list.append(frozenset((entry['actorname'], entry['actorID'])))
-                nodeId_list.append(frozenset((entry['objectname'], entry['objectID'])))
-                # nodeId_list.append(frozenset((entry['ppid'],entry['actorID'])))
-                # nodeId_list.append(frozenset((entry['pid'],entry['objectID'])))
-                # nodeId_list.append(entry['actorID'])
-                # nodeId_list.append(entry['objectID'])
-
-
+                # nodeId_list.append((entry['actorname'],entry['actorID']))
+                # nodeId_list.append((entry['objectname'],entry['objectID']))
+                nodeId_list.append(frozenset((entry['ppid'],entry['actorID'])))
+                nodeId_list.append(frozenset((entry['pid'],entry['objectID'])))
                 writer.writerow([
                     entry['actorID'],
                     entry['actorname'],
@@ -187,12 +180,11 @@ if __name__ == '__main__':
         print(f'len nodeId_set:{len(nodeId_list)}')
         """构建节点索引"""
         nodeId_dic = {}
-        # 双向索引
         for i in range(len(nodeId_list)):
             nodeId_dic[nodeId_list[i]] = i
             nodeId_dic[i] = nodeId_list[i]
         print(f'len node_dic:{len(nodeId_dic)}')
-        torch.save(nodeId_dic, osp.join(map_folder, hostname+'_name_uuid2index'))
+        torch.save(nodeId_dic, osp.join(map_folder, hostname+'_uuid2index'))
 
         end_time = time.time()
         print(f"Data has been written, using time {end_time-start_time} s.")

@@ -6,6 +6,7 @@ from Ours.scripts.config import is_evaluation
 from os import walk
 """
     step1 解压
+    这就是一个单纯的将gz解压成txt并且只保留对应主机数据的过程
     zip_data -> raw_data
 """
 if is_evaluation:

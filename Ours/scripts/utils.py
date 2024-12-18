@@ -170,26 +170,15 @@ def hashgen(l):
     return hasher.intdigest()
 
 
-# def cal_pos_edges_loss(link_pred_ratio):
-#     loss=[]
-#     for i in link_pred_ratio:
-#         loss.append(criterion(i,torch.ones(1)))
-#     return torch.tensor(loss)
-#
-# def cal_pos_edges_loss_multiclass(link_pred_ratio,labels):
-#     loss=[]
-#     for i in range(len(link_pred_ratio)):
-#         loss.append(criterion(link_pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
-#     return torch.tensor(loss)
 """
     metrics计算相关函数
 """
-def cal_pos_node_loss_multiclass(pred_ratio,labels):
-    loss=[]
-    criterion = nn.CrossEntropyLoss()
-    for i in range(len(pred_ratio)):
-        loss.append(criterion(pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
-    return torch.tensor(loss)
+# def cal_pos_node_loss_multiclass(pred_ratio,labels):
+#     loss=[]
+#     criterion = nn.CrossEntropyLoss()
+#     for i in range(len(pred_ratio)):
+#         loss.append(criterion(pred_ratio[i].reshape(1,-1),labels[i].reshape(-1)))
+#     return torch.tensor(loss)
 
 
 # 应该先计算边重建损失，返回单个loss组成的列表
@@ -201,50 +190,6 @@ def cal_pos_edge_loss_multiclass(pred_ratio,labels):
     return torch.tensor(loss)
 
 
-def cal_metrics(gt, node_dic, gate, node_uuid2index):
-    gate = float(gate)
-    anomaly_node = set()
-    benign_node = set()
-    for n in node_dic:
-        if n['loss'] >= gate:
-            anomaly_node.add(n['nodeId'])
-        else:
-            benign_node.add(n['nodeId'])
-
-    benign_node.difference_update(anomaly_node) # 排除A中的重复元素
-
-    FN = 0
-    FP = 0
-    TN = 0
-    TP = 0
-    for n in anomaly_node:
-        n_uuid = node_uuid2index[str(n)]
-        if n_uuid in gt:
-            TP +=1
-        else:
-            FP +=1
-    for n in benign_node:
-        n_uuid = node_uuid2index[str(n)]
-        if n_uuid in gt:
-            FN +=1
-        else:
-            TN +=1
-
-    precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
-    recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
-    f1_score = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) > 0 else 0.0
-
-    return {
-        "Precision": precision,
-        "Recall": recall,
-        "F1 Score": f1_score,
-        "Accuracy": accuracy,
-        "TP":TP,
-        "TN":TN,
-        "FP":FP,
-        "FN":FN
-    }
 
 
 
@@ -252,5 +197,5 @@ def cal_metrics(gt, node_dic, gate, node_uuid2index):
 
 if __name__ == '__main__':
     # print(datetime_to_ns_time())
-    print(datetime_to_timestamp_US("2019-09-23T09:42:53.999-04:00"))
+    # print(datetime_to_timestamp_US("2019-09-23T09:42:53.999-04:00"))
     print(timestamp_to_datetime_US(1569246173999))

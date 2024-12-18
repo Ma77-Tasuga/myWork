@@ -3,6 +3,8 @@ import torch
 # 控制原始数据解析的控制位
 # True：处理异常数据
 is_evaluation = True
+# 用于FeatureHasher的维度
+encode_len = 16
 
 device = torch.device('cuda:2')
 # device  = torch.device('cpu')
@@ -19,7 +21,7 @@ neighbor_size=20
 # node_type_num = 12
 
 # DARPA OPTC
-edge_type_num = 8
+edge_type_num = 10
 node_type_num = 3
 
 # min_dst_idx, max_dst_idx = 0, max_node_num
@@ -32,9 +34,6 @@ lr = 0.00001
 weight_decay = 0
 # gamma = 1
 
-gate = 2.5
+gate = 2.0
 # gate = 2
 # gate = 1.992
-
-# 用于FeatureHasher的维度
-encode_len = 16
